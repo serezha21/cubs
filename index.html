@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        html {
+            overflow: hidden;
+        }
+        #blocks, body {
+            margin: 0;
+            padding: 0;
+            background-color: #c1c1c1;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .block {
+            width: 100px;
+            height: 100px;
+            position: fixed;
+            cursor: pointer;
+        }
+        
+        .block:nth-child(1) {
+            background-color: red;
+        }
+        
+        .block:nth-child(2) {
+            background-color: green;
+        }
+        
+        .block:nth-child(3) {
+            background-color: blue;
+        }
+    </style>
+</head>
+<body>
+    <div id="blocks">
+        <div class="block">1</div>
+        <div class="block">2</div>
+        <div id="block" class="block">3</div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script>
+        function rand(min, max) {
+            return Math.floor(min + Math.random() * (max + 1 - min));
+        }
+        
+        function mix(blocks) {
+            for(let i = 0; i < blocks.left.length; i++){
+                for(let j = i + 1; j < blocks.left.length; j++){
+                    let tmp = { left: blocks.left[i] - blocks.left[j], top: blocks.top[i] - blocks.top[j]};
+                    if(tmp.left < 0) tmp.left *= -1;
+                    if(tmp.top < 0) tmp.top *= -1;
+                    if(tmp.left < $($('.block')[j]).width() && tmp.top < $($('.block')[j]).height()){
+                        console.log(tmp.left + ' = ' + blocks.left[i] + ' - ' + blocks.left[j]);
+                        console.log(tmp.top + ' = ' + blocks.top[i] + ' - ' + blocks.top[j]);
+                        blocks.left[j] = rand(0,$('body').width() - $($('.block')[j]).width());
+                        blocks.top[j] = rand(0,$('body').height() - $($('.block')[j]).height());
+                        i = 0;
+                        j = 0;
+                    }
+                }
+            }
+        }
+        
+        $(function(){
+            let blocks = { left: [], top: [] };
+            for(let i = 0; i < $('.block').length; i++){
+                blocks.left.push(rand(0,$('body').width() - $($('.block')[i]).width()));
+                blocks.top.push(rand(0,$('body').height() - $($('.block')[i]).height()));
+            }
+            mix(blocks);
+            console.dir(blocks);
+            for(let i = 0; i < $('.block').length; i++){
+                $($('.block')[i]).css({left: blocks.left[i], top: blocks.top[i]});
+            }
+            $('.block').draggable({ zIndex:9999999999 });
+            $('.block').draggable({
+                grid: [10,10]
+            });
+            let posTalck = {active: 0, left: 0, top: 0};
+            $('.block').draggable({drag:function(event, ui){
+                if(posTalck.active){
+                    ui.position.left = posTalck.left;
+                    ui.position.top = posTalck.top;
+                    return;
+                }
+                for(let i = 0; i < $('.block').length; i++){
+                    if($('.block')[i] == $(this)[0]) continue;
+                    let tmp = { left: $($('.block')[i]).position().left - $($(this)[0]).position().left, top: $($('.block')[i]).position().top - $($(this)[0]).position().top};
+                    if(tmp.left < 0) tmp.left *= -1;
+                    if(tmp.top < 0) tmp.top *= -1;
+                    if(tmp.left < $('.block').width() && tmp.top < $('.block').height()){
+                        let tmpPos = {left: ui.originalPosition.left - ui.position.left, top: ui.originalPosition.top - ui.position.top};
+                        if(tmpPos.left < 0) tmpPos.left *= -1;
+                        if(tmpPos.top < 0) tmpPos.top *= -1;
+                        if(tmpPos.left > tmpPos.top) {
+                            if($($('.block')[i]).position().top - $($(this)[0]).position().top < 0)
+                                ui.position.top += $('.block').height() - tmp.top;
+                            else
+                                ui.position.top -= $('.block').height() - tmp.top;
+                        }else {
+                            if($($('.block')[i]).position().left - $($(this)[0]).position().left < 0)
+                                ui.position.left += $('.block').width() - tmp.left;
+                            else
+                                ui.position.left -= $('.block').width() - tmp.left;
+                        }    
+                        posTalck.top = ui.position.top;
+                        posTalck.left = ui.position.left;
+                        posTalck.active = 1;
+                        return;
+                    }else
+                        posTalck.active = 0;
+                }
+            }});
+            $('.block').draggable({stop:function(e, ui){
+                posTalck.active = 0;
+            }});
+        });
+    </script>
+</body>
+</html>
